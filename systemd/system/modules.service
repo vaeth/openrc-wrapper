@@ -1,0 +1,12 @@
+[Unit]
+Description=Start kernel modules from openrc
+DefaultDependencies=no
+Before=firewall.service firewall-close.service network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/bin/openrc-wrapper modules start
+
+[Install]
+WantedBy=sysinit.target

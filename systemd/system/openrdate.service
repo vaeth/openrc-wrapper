@@ -1,0 +1,12 @@
+[Unit]
+Description=Start openrdate to fetch time from some ntp server
+After=dhcpcd.service network.target
+Requires=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/bin/openrc-wrapper openrdate start
+
+[Install]
+WantedBy=multi-user.target

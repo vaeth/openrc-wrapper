@@ -1,0 +1,54 @@
+openrc-wrapper - using some openrc scripts with systemd and other init systems
+
+(C) Martin Väth <martin@mvath.de>
+The license of this package is the GNU Public License GPL-2.
+
+This script has been splitted from the squash_dir project
+	https://github.com/vaeth/squash_dir/
+because the latter project has essentially been replaced by squashmount
+	https://github.com/vaeth/squashmount/
+except for the openrc-wraper which is of independent interest and which
+will be further developed only here - the version in squash_dir is frozen.
+Moreover, some independent systemd init-scripts are provided here.
+
+openrc-wrapper works only for relatively simple openrc initscripts:
+If the initscripts are simple enough, openrc-wrapper might even be able to
+start/stop them even if openrc is not installed at all (although the
+output might look better if openrc is installed).
+
+The usage is extremely simple: If you have an openrc init script
+	/etc/init.d/SERVICE
+possibly with a configuration file
+	/etc/conf.d/SERVICE
+you just start/stop this service by calling
+	/usr/bin/openrc-wrapper SERVICE start
+or
+	/usr/bin/openrc-wrapper SERVICE stop
+respectively. Note that this does not really start/stop the service in the
+sense of openrc but just executes the corresponding function of the
+initscript (in an environment which somewhat emulates the openrc environment).
+In addition, if the openrc init script registered additional COMMANDS like
+store/restore/... you can also use:
+	openrc-wrapper SERVICE COMMAND
+
+Example usage from the command line:
+	openrc-wrapper alsasound save
+and
+	openrc-wrapper alsasound restore
+
+A typical systemd service using an openrc initscript will contain
+	ExecStart=/usr/bin/openrc-wrapper SERVICE start
+and possibly also
+	ExecStop=/usr/bin/openrc-wrapper SERVICE stop
+Some examples are in the provided systemd/system folder.
+
+For installation just copy bin/* into /usr/bin and,
+at your discretion, the provided systemd initscripts systemd/system/*
+into your systemd system folder. In order to get completion for zsh, also copy
+zsh/_openrc-wrapper somewher into you your zsh's $fpath.
+Thus, a typical manual installation looks like this
+(after you did 'cd' into the project's directory):
+	cp bin/* /usr/bin
+	cp systemd/system/* /usr/lib/systemd/system
+	cp zsh/* /usr/share/zsh/site-functions
+(For gentoo there is an ebuild which does this in the mv overlay).
