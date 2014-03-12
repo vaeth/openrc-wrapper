@@ -21,6 +21,9 @@ fi
 PATH='/lib/rc/bin:'${PATH:-/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin}
 if ! command -v ebegin >/dev/null 2>&1
 then
+if test -r /lib/gentoo/functions.sh
+then . /lib/gentoo/functions.sh
+else
 ebegin() {
 einfon "${@}"
 }
@@ -75,6 +78,7 @@ eindent() {
 eoutdent() {
 :
 }
+fi
 fi
 RC_UNAME=`uname`
 RC_VERSION=1
