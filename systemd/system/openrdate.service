@@ -1,7 +1,7 @@
 [Unit]
 Description=Start openrdate to fetch time from some ntp server
-After=dhcpcd.service network.target
-Requires=network.target
+After=network-online.target
+Requires=network-online.target
 
 [Service]
 Type=oneshot
