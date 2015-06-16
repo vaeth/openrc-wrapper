@@ -1,6 +1,6 @@
 #!/bin/sh
 Echo() {
-	printf '%s\n' "${@}"
+	printf '%s\n' "$@"
 }
 Usage() {
 	Echo "Usage: ${0##*/} SCRIPT [-q] argument
@@ -8,15 +8,15 @@ Execute /etc/init.d/SCRIPT [-q] argument, somewhat emulating the
 behaviour of openrc but not requiring openrc to be running/installed."
 	exit ${1:-1}
 }
-[ ${#} -gt 1 ] || Usage
-SVCNAME=${1}
-test -r "/etc/init.d/${SVCNAME}" || Usage 127
+[ $# -gt 1 ] || Usage
+SVCNAME=$1
+test -r "/etc/init.d/$SVCNAME" || Usage 127
 shift
-if [ "${1}" = '-q' ]
-then	[ ${#} -ge 2 ] || Usage
+if [ "$1" = '-q' ]
+then	[ $# -ge 2 ] || Usage
 	shift
 	exec >/dev/null
-else	[ ${#} -ge 1 ] || Usage
+else	[ $# -ge 1 ] || Usage
 fi
 PATH='/lib/rc/bin:'${PATH:-/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin}
 if ! command -v ebegin >/dev/null 2>&1
@@ -25,46 +25,46 @@ if test -r /lib/gentoo/functions.sh
 then . /lib/gentoo/functions.sh
 else
 ebegin() {
-einfon "${@}"
+einfon "$@"
 }
 eend() {
 echo
 }
 einfo() {
-Echo "${@}"
+Echo "$@"
 }
 einfon() {
-printf '%s' "${*}"
+printf '%s' "$*"
 }
 ewarn() {
-Echo "${@}" >&2
+Echo "$@" >&2
 }
 ewarnn() {
-Echo "${@}" >&2
+Echo "$@" >&2
 }
 ewend() {
 eend >&2
 }
 eerror() {
-ewarn "${@}"
+ewarn "$@"
 }
 eerrorn() {
-ewarnn "${@}"
+ewarnn "$@"
 }
 vebegin() {
-ebegin "${@}"
+ebegin "$@"
 }
 veend() {
-eend "${@}"
+eend "$@"
 }
 veinfo() {
-einfo "${@}"
+einfo "$@"
 }
 vewarn() {
-ewarn "${@}"
+ewarn "$@"
 }
 vewend() {
-ewend "${@}"
+ewend "$@"
 }
 veindent() {
 :
@@ -84,23 +84,23 @@ RC_UNAME=`uname`
 RC_VERSION=1
 RC_TMPDIR='/run'
 RC_WRAPPER=1
-if test -r "/etc/conf.d/${SVCNAME}"
-then	. "/etc/conf.d/${SVCNAME}"
+if test -r "/etc/conf.d/$SVCNAME"
+then	. "/etc/conf.d/$SVCNAME"
 fi
-. "/etc/init.d/${SVCNAME}"
-if [ "${1}" = restart ]
+. "/etc/init.d/$SVCNAME"
+if [ "$1" = restart ]
 then	stop
 	start
 	exit
 fi
 for wrapper_i in start stop \
-	${extra_commands} \
-	${extra_started_commands} \
-	${extra_stopped_commands}
-do	[ "${wrapper_i}" = "${1}" ] && {
-	"${@}"
+	$extra_commands \
+	$extra_started_commands \
+	$extra_stopped_commands
+do	[ "$wrapper_i" = "$1" ] && {
+	"$@"
 	exit
 }
 done
-eerror "${SVCNAME} does not support '${1}'"
+eerror "$SVCNAME does not support '$1'"
 exit 1
