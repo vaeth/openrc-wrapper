@@ -1,6 +1,6 @@
 #!/bin/sh
 Echo() {
-	printf '%s\n' "$@"
+	printf '%s\n' ${1+"$@"}
 }
 Usage() {
 	Echo "Usage: ${0##*/} SCRIPT [-q] argument
@@ -12,7 +12,7 @@ behaviour of openrc but not requiring openrc to be running/installed."
 SVCNAME=$1
 test -r "/etc/init.d/$SVCNAME" || Usage 127
 shift
-if [ "$1" = '-q' ]
+if [ x"${1-}" = x'-q' ]
 then	[ $# -ge 2 ] || Usage
 	shift
 	exec >/dev/null
@@ -25,46 +25,46 @@ if test -r /lib/gentoo/functions.sh
 then . /lib/gentoo/functions.sh
 else
 ebegin() {
-einfon "$@"
+einfon ${1+"$@"}
 }
 eend() {
 echo
 }
 einfo() {
-Echo "$@"
+Echo ${1+"$@"}
 }
 einfon() {
 printf '%s' "$*"
 }
 ewarn() {
-Echo "$@" >&2
+Echo ${1+"$@"} >&2
 }
 ewarnn() {
-Echo "$@" >&2
+Echo ${1+"$@"} >&2
 }
 ewend() {
 eend >&2
 }
 eerror() {
-ewarn "$@"
+ewarn ${1+"$@"}
 }
 eerrorn() {
-ewarnn "$@"
+ewarnn ${1+"$@"}
 }
 vebegin() {
-ebegin "$@"
+ebegin ${1+"$@"}
 }
 veend() {
-eend "$@"
+eend ${1+"$@"}
 }
 veinfo() {
-einfo "$@"
+einfo ${1+"$@"}
 }
 vewarn() {
-ewarn "$@"
+ewarn ${1+"$@"}
 }
 vewend() {
-ewend "$@"
+ewend ${1+"$@"}
 }
 veindent() {
 :
@@ -88,7 +88,7 @@ if test -r "/etc/conf.d/$SVCNAME"
 then	. "/etc/conf.d/$SVCNAME"
 fi
 . "/etc/init.d/$SVCNAME"
-if [ "$1" = restart ]
+if [ x"${1-}" = x'restart' ]
 then	stop
 	start
 	exit
@@ -97,10 +97,10 @@ for wrapper_i in start stop \
 	$extra_commands \
 	$extra_started_commands \
 	$extra_stopped_commands
-do	[ "$wrapper_i" = "$1" ] && {
+do	[ x"$wrapper_i" = x"$1" ] && {
 	"$@"
 	exit
 }
 done
-eerror "$SVCNAME does not support '$1'"
+eerror "$SVCNAME does not support '${1-}'"
 exit 1
