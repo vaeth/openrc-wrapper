@@ -1,84 +1,234 @@
 #!/bin/sh
-Echo() {
-	printf '%s\n' ${1+"$@"}
-}
-Usage() {
-	Echo "Usage: ${0##*/} SCRIPT [-q] argument
+wrapper_usage() {
+	printf '%s\n' "Usage: ${0##*/} SCRIPT [-q] argument
 Execute /etc/init.d/SCRIPT [-q] argument, somewhat emulating the
 behaviour of openrc but not requiring openrc to be running/installed."
 	exit ${1:-1}
 }
-[ $# -gt 1 ] || Usage
+[ $# -gt 1 ] || wrapper_usage
 SVCNAME=$1
-test -r "/etc/init.d/$SVCNAME" || Usage 127
+test -r "/etc/init.d/$SVCNAME" || wrapper_usage 127
 shift
 if [ x"${1-}" = x'-q' ]
-then	[ $# -ge 2 ] || Usage
+then	[ $# -ge 2 ] || wrapper_usage
 	shift
 	exec >/dev/null
-else	[ $# -ge 1 ] || Usage
+else	[ $# -ge 1 ] || wrapper_usage
 fi
 PATH='/lib/rc/bin:'${PATH:-/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin}
 if ! command -v ebegin >/dev/null 2>&1
 then
-if test -r /lib/gentoo/functions.sh
-then . /lib/gentoo/functions.sh
-else
-ebegin() {
-einfon ${1+"$@"}
+output_n() {
+	[ x"$LAST_E_CMD" != x'ebegin' ] || echo
+	printf '%s' "$1$RC_INDENTATION$2"
+	LAST_E_CMD=$3
 }
-eend() {
-echo
+
+output_l() {
+	output_n "$1" "$2
+" "$3"
 }
-einfo() {
-Echo ${1+"$@"}
-}
-einfon() {
-printf '%s' "$*"
-}
-ewarn() {
-Echo ${1+"$@"} >&2
-}
-ewarnn() {
-Echo ${1+"$@"} >&2
-}
-ewend() {
-eend >&2
-}
-eerror() {
-ewarn ${1+"$@"}
-}
-eerrorn() {
-ewarnn ${1+"$@"}
-}
-vebegin() {
-ebegin ${1+"$@"}
-}
-veend() {
-eend ${1+"$@"}
-}
-veinfo() {
-einfo ${1+"$@"}
-}
-vewarn() {
-ewarn ${1+"$@"}
-}
-vewend() {
-ewend ${1+"$@"}
-}
-veindent() {
-:
-}
-veoutdent() {
-:
-}
+
 eindent() {
-:
+	RC_INDENTATION=$RC_INDENTATION'  '
 }
+
 eoutdent() {
+	RC_INDENTATION=${RC_INDENTATION%  }
+}
+
+init_colors() {
+	RC_ENDCOL=1
+	if [ -z "${CONSOLETYPE:++}" ]
+	then	CONSOLETYPE=`consoletype stdout 2>/dev/null`
+		export CONSOLETYPE
+	fi
+	if [ x"$CONSOLETYPE" = x'serial' ]
+	then	RC_NOCOLOR=1
+		RC_ENDCOL=0
+	fi
+	if yesno "${RC_NOCOLOR-}"
+	then	NORMAL=
+		GOOD=
+		WARN=
+		BAD=
+		HILITE=
+		BRACKET=
+	elif tput color >/dev/null 2>&1
+	then	NORMAL=`tput sgr0`
+		init_colors=$NORMAL`tput bold`
+		GOOD=$init_colors`tput setaf 2`
+		WARN=$init_colors`tput setaf 3`
+		BAD=$init_colors`tput setaf 1`
+		HILITE=$init_colors`tput setaf 6`
+		BRACKET=$init_colors`tput setaf 4`
+	else	NORMAL=`printf '\033[0m'`
+		GOOD=`printf '\033[32;01m'`
+		WARN=`printf '\033[33;01m'`
+		BAD=`printf '\033[31;01m'`
+		HILITE=`printf '\033[36;01m'`
+		BRACKET=`printf '\033[34;01m'`
+	fi
+	RC_INDENTATION=
+	LAST_E_CMD=
+	init_colors=${COLUMNS:-0}
+	[ "$init_colors" -gt 0 ] || {
+		init_colors="set -- `stty size 2>/dev/null`"
+		init_colors=`$init_colors
+printf '%s' "$2"`
+		: ${init_colors:=0}
+        }
+	[ "$init_colors" -ge 6 ] && [ "$init_colors" -le 80 ] || init_colors=80
+	init_colors=$(( $init_colors - 6 ))
+	if yesno "$RC_ENDCOL"
+	then	eval 'rc_end() {
+	printf '\''\r\n\033[A\033['"$init_colors"'C%s\n'\'' "$*"
+}'
+	else	eval 'rc_end() {
+	printf '\''\n%'"$init_colors"'s\n'\'' "$*"
+}'
+	fi
+init_colors() {
 :
 }
-fi
+}
+
+esyslog() {
+	yesno "${EINFO_LOG-}" && command -v logger >/dev/null 2>&1 || exit 0
+	esyslog_pri=$1
+	esyslog_tag=$2
+	shift 2
+	[ -n "${*:++}" ] || exit 0
+	logger -p "$esyslog_pri" -t "$esyslog_tag" -- "$@*"
+}
+
+einfon() {
+	! yesno "${EINFO_QUIET-}" || return 0
+	init_colors
+	output_n " ${GOOD}*$NORMAL " "$*" einfon
+}
+
+einfo() {
+	! yesno "${EINFO_QUIET-}" || return 0
+	init_colors
+	output_l " ${GOOD}*$NORMAL " "$*" einfo
+}
+
+ewarnn() {
+	! yesno "${EINFO_QUIET-}" || return 0
+	init_colors
+	output_n " ${WARN}*$NORMAL " "$*" ewarnn >&2
+	esyslog daemon.warning "${0##*/}" "$*"
+}
+
+ewarn() {
+	! yesno "${EINFO_QUIET-}" || return 0
+	init_colors
+	output_l " ${WARN}*$NORMAL " "$*" ewarn >&2
+	esyslog daemon.warning "${0##*/}" "$*"
+}
+
+eerrorn() {
+	! yesno "${EERROR_QUIET-}" || return
+	init_colors
+	output_n " ${BAD}*$NORMAL " "$*" eerrorn >&2
+	esyslog daemon.err "${0##*/}" "$*"
+	return 1
+}
+
+eerror() {
+	! yesno "${EERROR_QUIET-}" || return
+	init_colors
+	output_l " ${BAD}*$NORMAL " "$*" eerror >&2
+	esyslog daemon.err "${0##*/}" "$*"
+}
+
+ebegin() {
+	! yesno "${EINFO_QUIET-}" || return 0
+	init_colors
+	output_n " ${GOOD}*$NORMAL " "${*-} ..." ebegin
+}
+
+eend_sub() {
+	if [ "$1" -eq 0 ]
+	then	! yesno "${EINFO_QUIET-}" || return 0
+		init_colors
+		rc_end "$BRACKET[ ${GOOD}ok$BRACKET ]$NORMAL"
+		LAST_E_CMD=$2
+		return 0
+	fi
+	init_colors
+	rc_end "${BRACKET}[ ${BAD}!!${BRACKET} ]${NORMAL}"
+	LAST_E_CMD=$2
+	return $1
+}
+
+eend() {
+	eend_sub "${1:-0}" eend && return
+	eend=$?
+	shift
+	[ -z "${*:++}" ] || eerror "$*"
+	return $eend
+}
+
+ewend() {
+	eend_sub "${1:-0}" ewend && return
+	eend=$?
+	shift
+	[ -z "${*:++}" ] || ewarn "$*"
+	return $eend
+}
+
+veinfo() {
+	! yesno "${EINFO_VERBOSE-}" || einfo ${1+"$@"}
+}
+
+veinfon() {
+	! yesno "${EINFO_VERBOSE-}" || einfon ${1+"$@"}
+}
+
+vewarn() {
+	! yesno "${EINFO_VERBOSE-}" || ewarn ${1+"$@"}
+}
+
+veerror() {
+	! yesno "${EINFO_VERBOSE-}" || eerror ${1+"$@"}
+}
+
+vebegin(){
+	! yesno "${EINFO_VERBOSE-}" || ebegin ${1+"$@"}
+}
+
+veend() {
+	! yesno "${EINFO_VERBOSE-}" || eend ${1+"$@"}
+	return ${1:-0}
+}
+
+vewend() {
+	! yesno "${EINFO_VERBOSE-}" || ewend ${1+"$@"}
+	return ${1:-0}
+}
+
+veindent() {
+	! yesno "${EINFO_VERBOSE-}" || eindent
+}
+
+veoutdent() {
+	! yesno "${EINFO_VERBOSE-}" || eoutdent
+}
+
+die() {
+	eerror ${1+"$@"}
+	exit 1
+}
+
+yesno() {
+	case ${1:-n} in
+	[nNFf0]*)
+		return 1;;
+	esac
+	:
+}
 fi
 RC_UNAME=`uname`
 RC_VERSION=1
