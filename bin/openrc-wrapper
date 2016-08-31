@@ -15,9 +15,18 @@ then	[ $# -ge 2 ] || wrapper_usage
 	exec >/dev/null
 else	[ $# -ge 1 ] || wrapper_usage
 fi
-PATH='/lib/rc/bin:'${PATH:-/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin}
-if ! command -v ebegin >/dev/null 2>&1
-then
+: ${PATH:=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin}
+# If openrc's functions.sh can be used, then use it
+source_functions() {
+	for wrapper_i in /lib64 /lib
+	do	! test -r $wrapper_i/rc/sh/functions.sh || continue
+		. $wrapper_i/rc/sh/functions.sh
+		return 0
+	done
+	return 1
+}
+# Otherwise provide emulations of the most important functions
+source_functions || {
 output_n() {
 	[ x"$LAST_E_CMD" != x'ebegin' ] || echo
 	printf '%s' "$1$RC_INDENTATION$2"
@@ -47,7 +56,7 @@ init_colors() {
 	then	RC_NOCOLOR=1
 		RC_ENDCOL=0
 	fi
-	if yesno "${RC_NOCOLOR-}"
+	if yesno "${RC_NOCOLOR-}" || ! yesno "${EINFO_COLOR:-y}" || ! test -t 1
 	then	NORMAL=
 		GOOD=
 		WARN=
@@ -77,7 +86,7 @@ init_colors() {
 		init_colors=`$init_colors
 printf '%s' "$2"`
 		: ${init_colors:=0}
-        }
+	}
 	[ "$init_colors" -ge 6 ] && [ "$init_colors" -le 80 ] || init_colors=80
 	init_colors=$(( $init_colors - 6 ))
 	if yesno "$RC_ENDCOL"
@@ -217,11 +226,6 @@ veoutdent() {
 	! yesno "${EINFO_VERBOSE-}" || eoutdent
 }
 
-die() {
-	eerror ${1+"$@"}
-	exit 1
-}
-
 yesno() {
 	case ${1:-n} in
 	[nNFf0-]*|[oO][fF]*)
@@ -229,10 +233,11 @@ yesno() {
 	esac
 	:
 }
-fi
+}
+
 RC_UNAME=`uname`
 RC_VERSION=1
-RC_TMPDIR='/run'
+RC_TMPDIR=/run
 RC_WRAPPER=1
 if test -r "/etc/conf.d/$SVCNAME"
 then	. "/etc/conf.d/$SVCNAME"
