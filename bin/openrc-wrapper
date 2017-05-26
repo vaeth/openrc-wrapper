@@ -228,7 +228,7 @@ veoutdent() {
 
 yesno() {
 	case ${1:-n} in
-	[nNFf0-]*|[oO][fF]*)
+	[nNfF]*|[oO][fF]*|0|-)
 		return 1;;
 	esac
 	:
