@@ -6,7 +6,7 @@ Requires=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=true
-ExecStart=/usr/bin/openrc-wrapper openrdate start
+ExecStart=/bin/openrc-wrapper openrdate start
 
 [Install]
 WantedBy=multi-user.target

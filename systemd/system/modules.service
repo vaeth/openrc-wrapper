@@ -6,7 +6,7 @@ Before=firewall.service firewall-close.service network.target
 [Service]
 Type=oneshot
 RemainAfterExit=true
-ExecStart=/usr/bin/openrc-wrapper modules start
+ExecStart=/bin/openrc-wrapper modules start
 
 [Install]
 WantedBy=sysinit.target
