@@ -19,7 +19,7 @@ fi
 # If openrc's functions.sh can be used, then use it
 source_functions() {
 	for wrapper_i in /lib64 /lib
-	do	! test -r $wrapper_i/rc/sh/functions.sh || continue
+	do	test -r $wrapper_i/rc/sh/functions.sh || continue
 		. $wrapper_i/rc/sh/functions.sh
 		return 0
 	done
