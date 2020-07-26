@@ -1,4 +1,6 @@
 #!/bin/sh
+# (C) Martin V\"ath <martin at mvath.de>
+# SPDX-License-Identifier: GPL-2.0-only
 wrapper_usage() {
 	printf '%s\n' "Usage: ${0##*/} SCRIPT [-q] argument
 Execute /etc/init.d/SCRIPT [-q] argument, somewhat emulating the

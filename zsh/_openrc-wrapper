@@ -1,4 +1,6 @@
 #compdef openrc-wrapper
+# (C) Martin V\"ath <martin at mvath.de>
+# SPDX-License-Identifier: GPL-2.0-only
 _arguments : \
 '-q[quiet\: Suppress standard output]' \
 '1:inits:compadd -- /etc/init.d/*(:t)' \

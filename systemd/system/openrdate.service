@@ -1,3 +1,5 @@
+# (C) Martin V\"ath <martin at mvath.de>
+# SPDX-License-Identifier: GPL-2.0-only
 [Unit]
 Description=Start openrdate to fetch time from some ntp server
 After=network-online.target

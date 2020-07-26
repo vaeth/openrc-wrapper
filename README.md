@@ -4,6 +4,7 @@ Using some __openrc__ scripts with __systemd__ and other init systems
 
 (C) Martin Väth (martin at mvath.de).
 The license of this package is the GNU Public License GPL-2.
+SPDX-License-Identifier: GPL-2.0-only
 
 This script has been splitted from the **squash_dir** project
 
